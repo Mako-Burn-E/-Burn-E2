@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>$BURN-E — From 1B to 23M</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@700;800;900&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <script defer src="assets/js/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <div class="nav-brand">$BURN-E</div>
+      <div class="nav-links">
+        <a href="#live">Live</a>
+        <a href="#docs">Docs</a>
+        <a href="#launch" class="nav-cta">Launch</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="wrap">
+    <header class="hero" id="top">
+      <div class="hero-inner">
+        <div>
+          <h1>Light it. Burn it. Earn it.</h1>
+          <p class="tag"><strong>$BURN-E</strong> From 1B to 23M. The legend of deflation begins.</p>
+          <div class="cta-row">
+            <a class="btn-primary" id="launchBtn" href="#" target="_blank" rel="noopener">Launch Token</a>
+            <a class="btn-secondary" href="#docs">Project Details</a>
+          </div>
+          <div class="panels">
+            <div class="panel">
+              <h3>Supply Start</h3>
+              <div class="meta" id="kpiStart">—</div>
+            </div>
+            <div class="panel">
+              <h3>End Goal</h3>
+              <div class="meta" id="kpiGoal">—</div>
+            </div>
+            <div class="panel">
+              <h3>Current Supply</h3>
+              <div class="meta" id="currentSupply">—</div>
+            </div>
+          </div>
+          <div class="path" aria-hidden="true"></div>
+        </div>
+        <div>
+          <img class="robot" alt="$BURN-E robot" src="assets/img/robot-hero.png" />
+        </div>
+      </div>
+    </header>
+
+    <section id="live">
+      <h2 class="section-title">Live Burn Tracker</h2>
+      <div class="card">
+        <div class="livebar" aria-label="Live burn progress">
+          <div id="progressFill"></div>
+        </div>
+        <div class="kpis">
+          <div class="kpi">
+            <div class="label">Burned</div>
+            <div class="value" id="burnedValue">—</div>
+          </div>
+          <div class="kpi">
+            <div class="label">To Goal</div>
+            <div class="value" id="toGoalValue">—</div>
+          </div>
+          <div class="kpi">
+            <div class="label">% to Goal</div>
+            <div class="value" id="pctValue">—</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Goal Marker</div>
+            <div class="value" style="color: var(--flame-yellow); font-weight:900;">23,000,000</div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px;">
+        <canvas id="burnChart" height="140"></canvas>
+      </div>
+    </section>
+
+    <section id="docs">
+      <h2 class="section-title">Project Docs</h2>
+      <div class="tabs card">
+        <div class="tablist" role="tablist" aria-label="Project sections">
+          <button role="tab" data-file="about.html" id="tab-about" aria-controls="panel-about" aria-selected="true">About $BURN-E</button>
+          <button role="tab" data-file="integration.html" id="tab-integration" aria-controls="panel-integration" aria-selected="false">PlayDeFi Integration</button>
+          <button role="tab" data-file="burner.html" id="tab-burner" aria-controls="panel-burner" aria-selected="false">$BURN-E Burner NFT</button>
+          <button role="tab" data-file="faq.html" id="tab-faq" aria-controls="panel-faq" aria-selected="false">FAQ</button>
+          <button role="tab" data-file="tokenomics.html" id="tab-tokenomics" aria-controls="panel-tokenomics" aria-selected="false">Tokenomics</button>
+          <button role="tab" data-file="roadmap.html" id="tab-roadmap" aria-controls="panel-roadmap" aria-selected="false">Roadmap</button>
+        </div>
+        <div id="panel-about" class="tabpanel active prose" role="tabpanel" aria-labelledby="tab-about" tabindex="0"></div>
+        <div id="panel-integration" class="tabpanel prose" role="tabpanel" aria-labelledby="tab-integration" tabindex="0"></div>
+        <div id="panel-burner" class="tabpanel prose" role="tabpanel" aria-labelledby="tab-burner" tabindex="0"></div>
+        <div id="panel-faq" class="tabpanel prose" role="tabpanel" aria-labelledby="tab-faq" tabindex="0"></div>
+        <div id="panel-tokenomics" class="tabpanel prose" role="tabpanel" aria-labelledby="tab-tokenomics" tabindex="0"></div>
+        <div id="panel-roadmap" class="tabpanel prose" role="tabpanel" aria-labelledby="tab-roadmap" tabindex="0"></div>
+      </div>
+    </section>
+
+    <section id="launch">
+      <h2 class="section-title">Ready to Join the Burn?</h2>
+      <div class="card launch-grid">
+        <div>
+          <p class="meta">This button opens the official launch flow. Always verify the contract address from our official channels.</p>
+          <div class="cta-row">
+            <a class="btn-primary" id="launchBtn2" href="#" target="_blank" rel="noopener">Launch Token</a>
+            <a class="btn-secondary" href="#live">View Live Burn</a>
+          </div>
+        </div>
+        <div>
+          <img class="robot" alt="$BURN-E alt art" src="assets/img/robot-launch.png" />
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="small">© 2025 $BURN-E. All rights reserved. Backgrounds: Charcoal Black #1E1A1F · Obsidian Brown #2A2221 · Accents: Flame Yellow #FFD44E · Ember Orange #FF7A1A · Burn Red #E03B00</div>
+    </footer>
+  </div>
+
+  <div class="modal-backdrop" id="subscribeBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-labelledby="subscribeTitle" aria-modal="true">
+      <h3 id="subscribeTitle">Get launch updates first</h3>
+      <p>Subscribe for $BURN-E launch alerts, dApp updates, and weekly winner recaps.</p>
+      <form class="row" id="subscribeForm" action="#" method="POST">
+        <input type="email" name="email" placeholder="your@email.com" required />
+        <button class="primary" type="submit">Subscribe</button>
+        <button class="ghost" type="button" id="subscribeClose">Not now</button>
+      </form>
+      <div class="small">We’ll only email important updates. Unsubscribe anytime.</div>
+    </div>
+  </div>
+</body>
+</html>

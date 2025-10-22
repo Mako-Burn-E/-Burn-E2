@@ -1,0 +1,11 @@
+{
+  "launch_url": "https://play.playdefi.org/burn-e",
+  "burn_api_url": "",
+  "subscribe_action": "https://formspree.io/f/your-id",
+  "fallback_burn": {
+    "start_supply": 1000000000,
+    "goal_supply": 23000000,
+    "current_supply": 1000000000,
+    "timeseries": []
+  }
+}
