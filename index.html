@@ -9,7 +9,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@700;800;900&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/styles.css">
   <script defer src="assets/js/main.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <nav class="nav">
@@ -54,38 +53,7 @@
         </div>
       </div>
     </header>
-
-    <section id="live">
-      <h2 class="section-title">Live Burn Tracker</h2>
-      <div class="card">
-        <div class="livebar" aria-label="Live burn progress">
-          <div id="progressFill"></div>
-        </div>
-        <div class="kpis">
-          <div class="kpi">
-            <div class="label">Burned</div>
-            <div class="value" id="burnedValue">—</div>
-          </div>
-          <div class="kpi">
-            <div class="label">To Goal</div>
-            <div class="value" id="toGoalValue">—</div>
-          </div>
-          <div class="kpi">
-            <div class="label">% to Goal</div>
-            <div class="value" id="pctValue">—</div>
-          </div>
-          <div class="kpi">
-            <div class="label">Goal Marker</div>
-            <div class="value" style="color: var(--flame-yellow); font-weight:900;">23,000,000</div>
-          </div>
-        </div>
-      </div>
-      <div class="card" style="margin-top:12px;">
-        <canvas id="burnChart" height="140"></canvas>
-      </div>
-    </section>
-
-    <section id="docs">
+<section id="docs">
       <h2 class="section-title">Project Docs</h2>
       <div class="tabs card">
         <div class="tablist" role="tablist" aria-label="Project sections">
@@ -104,6 +72,74 @@
         <div id="panel-roadmap" class="tabpanel prose" role="tabpanel" aria-labelledby="tab-roadmap" tabindex="0"></div>
       </div>
     </section>
+    <section id="live">
+      <h2 class="section-title">
+        Burn Ledger
+        <span id="prelaunchBadge" class="badge badge-prelaunch" aria-live="polite">Pre-Launch</span>
+      </h2>
+
+      <div class="kpi-grid">
+        <div class="kpi kpi-lg">
+          <div class="label">Total Burned</div>
+          <div class="value" id="kpiTotalBurned">—</div>
+        </div>
+        <div class="kpi kpi-lg">
+          <div class="label">Current Supply</div>
+          <div class="value" id="kpiCurrentSupply">—</div>
+        </div>
+        <div class="kpi kpi-lg">
+          <div class="label">% to Goal</div>
+          <div class="value" id="kpiPctGoal">—</div>
+        </div>
+        <div class="kpi kpi-lg">
+          <div class="label">Last Burn</div>
+          <div class="value" id="kpiLastBurn">—</div>
+        </div>
+      </div>
+
+      <div class="ledger-grid">
+        <div class="card">
+          <div class="card-head">
+            <h3>Recent Burns</h3>
+            <button class="tiny" id="refreshBurns" type="button">Refresh</button>
+          </div>
+          <div id="burnsEmpty" class="empty" hidden>No burns yet — be the spark 🔥</div>
+          <table class="ledger" id="burnsTable" aria-label="Recent burn transactions">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th class="right">Amount</th>
+                <th>Type</th>
+                <th>Tx</th>
+              </tr>
+            </thead>
+            <tbody id="burnsBody"></tbody>
+          </table>
+          <div class="row-end">
+            <button class="ghost tiny" id="loadMoreBurns" type="button" hidden>Load more</button>
+          </div>
+        </div>
+
+        <div class="side-stack">
+          <div class="card pot">
+            <div class="card-head">
+              <h3>Weekly Prize Pot</h3>
+            </div>
+            <div class="pot-amount" id="weeklyPot">—</div>
+            <div class="small">25% of Treasury redistributes weekly via the PlayDeFi dApp.</div>
+          </div>
+
+          <div class="card milestones">
+            <div class="card-head">
+              <h3>Milestones</h3>
+            </div>
+            <div class="milestone-chips" id="milestoneChips"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    
 
     <section id="launch">
       <h2 class="section-title">Ready to Join the Burn?</h2>

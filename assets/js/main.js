@@ -9,19 +9,46 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   setupTabs();
-  loadConfigAndBurn();
+  initSite();
   setupModal();
+  document.getElementById('refreshBurns')?.addEventListener('click', () => refreshLedger(true));
+  document.getElementById('loadMoreBurns')?.addEventListener('click', () => loadMoreBurns());
 });
 
-async function loadTabContent(file, panelId) {
+let CFG = null;
+let burnsCursor = null;
+
+async function initSite() {
   try {
-    const r = await fetch(`content/${file}`);
-    const html = await r.text();
-    const panel = document.getElementById(panelId);
-    if (panel) panel.innerHTML = html;
+    const r = await fetch(CONFIG_URL, { cache: 'no-store' });
+    CFG = await r.json();
+
+    // CTAs
+    const dappUrl = CFG.launch_url;
+    const pumpUrl = CFG.pump_url;
+    ['launchBtn','launchBtn2'].forEach(id => { const el = document.getElementById(id); if (el && dappUrl) el.href = dappUrl; });
+    const buyBtn = document.getElementById('buyBtn'); if (buyBtn && pumpUrl) buyBtn.href = pumpUrl;
+    const fuelBtn = document.getElementById('fuelBtn'); if (fuelBtn && pumpUrl) fuelBtn.href = pumpUrl;
+
+    // Subscribe form
+    const form = document.getElementById('subscribeForm');
+    if (form && CFG.subscribe_action) form.action = CFG.subscribe_action;
+
+    // Badge: show only if no live API configured
+    const badge = document.getElementById('prelaunchBadge');
+    const hasLiveLedger = (CFG?.ledger_api?.metrics_url || CFG?.burn_api_url);
+    if (badge) badge.style.display = hasLiveLedger ? 'none' : 'inline-block';
+
+    // Render KPIs + Ledger
+    await refreshLedger(false);
   } catch (e) {
-    const panel = document.getElementById(panelId);
-    if (panel) panel.innerHTML = "<p class='meta'>Unable to load content.</p>";
+    console.error(e);
+    renderMetrics({
+      start_supply: 1000000000, goal_supply: 23000000,
+      current_supply: 1000000000, total_burned: 0, pct_to_goal: 0, last_burn_ts: null, weekly_prize_pot: 0
+    });
+    renderBurns([], null);
+    renderMilestones([]);
   }
 }
 
@@ -38,11 +65,6 @@ function setupTabs() {
       const file = tab.dataset.file;
       if (file) loadTabContent(file, panelId);
     });
-    tab.addEventListener('keydown', (e) => {
-      const idx = Array.from(tabs).indexOf(tab);
-      if (e.key === 'ArrowRight') { e.preventDefault(); tabs[(idx+1)%tabs.length].focus(); }
-      if (e.key === 'ArrowLeft')  { e.preventDefault(); tabs[(idx-1+tabs.length)%tabs.length].focus(); }
-    });
   });
   const first = document.querySelector('.tablist [aria-selected="true"]');
   if (first) {
@@ -52,82 +74,172 @@ function setupTabs() {
   }
 }
 
-async function loadConfigAndBurn() {
+async function loadTabContent(file, panelId) {
   try {
-    const r = await fetch(CONFIG_URL, { cache: 'no-store' });
-    const cfg = await r.json();
-
-    // Wire buttons from config
-    const dappUrl = cfg.launch_url;
-    const pumpUrl = cfg.pump_url;
-    const launchBtn = document.getElementById('launchBtn');
-    const launchBtn2 = document.getElementById('launchBtn2');
-    const buyBtn = document.getElementById('buyBtn');
-    const fuelBtn = document.getElementById('fuelBtn');
-    if (launchBtn && dappUrl) launchBtn.href = dappUrl;
-    if (launchBtn2 && dappUrl) launchBtn2.href = dappUrl;
-    if (buyBtn && pumpUrl) buyBtn.href = pumpUrl;
-    if (fuelBtn && pumpUrl) fuelBtn.href = pumpUrl;
-
-    // Subscribe form endpoint
-    const form = document.getElementById('subscribeForm');
-    if (form && cfg.subscribe_action) form.action = cfg.subscribe_action;
-
-    // Burn data
-    let burnData = null;
-    if (cfg.burn_api_url) {
-      try {
-        const br = await fetch(cfg.burn_api_url, { cache: 'no-store' });
-        if (!br.ok) throw new Error('API HTTP ' + br.status);
-        burnData = await br.json();
-      } catch (e) { /* fallback */ }
-    }
-    if (!burnData) burnData = cfg.fallback_burn;
-
-    renderBurn(burnData);
-  } catch (e) {
-    renderBurn({ start_supply: 1000000000, goal_supply: 23000000, current_supply: 1000000000, timeseries: [] });
+    const r = await fetch(`content/${file}`);
+    const html = await r.text();
+    const panel = document.getElementById(panelId);
+    if (panel) panel.innerHTML = html;
+  } catch {
+    const panel = document.getElementById(panelId);
+    if (panel) panel.innerHTML = "<p class='meta'>Unable to load content.</p>";
   }
 }
 
-function renderBurn(burnData) {
-  const start = burnData.start_supply ?? 1000000000;
-  const goal = burnData.goal_supply ?? 23000000;
-  const current = burnData.current_supply ?? start;
-  const burned = Math.max(0, start - current);
-  const totalTargetBurn = Math.max(1, start - goal);
-  const pct = Math.max(0, Math.min(100, (burned / totalTargetBurn) * 100));
-
-  const pf = document.getElementById('progressFill');
-  if (pf) pf.style.width = pct.toFixed(2) + '%';
-  const bv = document.getElementById('burnedValue');
-  if (bv) bv.textContent = burned.toLocaleString();
-  const pv = document.getElementById('pctValue');
-  if (pv) pv.textContent = (Math.round(pct*100)/100).toFixed(2) + '%';
-  const tg = document.getElementById('toGoalValue');
-  if (tg) tg.textContent = Math.max(0, current - goal).toLocaleString();
-  const cs = document.getElementById('currentSupply');
-  if (cs) cs.textContent = current.toLocaleString() + ' tokens';
-  const ks = document.getElementById('kpiStart'); if (ks) ks.textContent = start.toLocaleString() + ' tokens';
-  const kg = document.getElementById('kpiGoal'); if (kg) kg.textContent = goal.toLocaleString() + ' tokens';
-
-  const ctx = document.getElementById('burnChart');
-  if (ctx && burnData.timeseries && burnData.timeseries.length > 0) {
-    const first = burnData.timeseries[0];
-    const dateKey = Object.keys(first)[0];
-    const supKey = Object.keys(first).find(k => k.includes('supply')) || Object.keys(first)[1];
-    const labels = burnData.timeseries.map(p => p[dateKey]);
-    const data = burnData.timeseries.map(p => p[supKey]);
-    new Chart(ctx, {
-      type: 'line',
-      data: { labels, datasets: [{ label: 'Current Supply', data, borderWidth: 2, tension: 0.28 }] },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        scales: { x: { ticks: { color: '#B1A9A5' } }, y: { ticks: { color: '#B1A9A5' } } },
-        plugins: { legend: { labels: { color: '#FFD44E' } } }
+async function refreshLedger(force) {
+  try {
+    const metrics = await fetchJson(CFG?.ledger_api?.metrics_url) || CFG?.fallback_ledger?.metrics || CFG?.fallback_burn || null;
+    if (metrics) {
+      if (metrics.start_supply && metrics.goal_supply && metrics.current_supply && metrics.total_burned == null) {
+        metrics.total_burned = Math.max(0, (metrics.start_supply || 0) - (metrics.current_supply || 0));
+        const totalTargetBurn = Math.max(1, (metrics.start_supply || 0) - (metrics.goal_supply || 1));
+        metrics.pct_to_goal = Math.max(0, Math.min(100, (metrics.total_burned / totalTargetBurn) * 100));
       }
-    });
-  } else if (ctx) { ctx.parentElement.style.display = 'none'; }
+      renderMetrics(metrics);
+    }
+
+    if (force) burnsCursor = null;
+    const burnsResp = await fetchJson(appendCursor(CFG?.ledger_api?.burns_url, burnsCursor)) || { items: CFG?.fallback_ledger?.burns || [], next_cursor: null };
+    renderBurns(burnsResp.items || [], burnsResp.next_cursor || null);
+
+    const milestones = await fetchJson(CFG?.ledger_api?.milestones_url) || { milestones: CFG?.fallback_ledger?.milestones || [] };
+    renderMilestones(milestones.milestones || []);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function appendCursor(url, cursor) {
+  if (!url) return null;
+  if (!cursor) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}cursor=${encodeURIComponent(cursor)}`;
+}
+
+async function loadMoreBurns() {
+  if (!burnsCursor) return;
+  const next = await fetchJson(appendCursor(CFG?.ledger_api?.burns_url, burnsCursor));
+  const items = next?.items || [];
+  if (items.length) appendBurnRows(items);
+  burnsCursor = next?.next_cursor || null;
+  document.getElementById('loadMoreBurns').hidden = !burnsCursor;
+}
+
+async function fetchJson(url) {
+  if (!url) return null;
+  const r = await fetch(url, { cache: 'no-store' });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return await r.json();
+}
+
+function renderMetrics(m) {
+  const start = m.start_supply ?? 1000000000;
+  const goal = m.goal_supply ?? 23000000;
+  const current = m.current_supply ?? start;
+  const totalBurned = m.total_burned ?? Math.max(0, start - current);
+  const pct = m.pct_to_goal ?? Math.max(0, Math.min(100, (totalBurned / Math.max(1, start - goal)) * 100));
+  const lastAgo = m.last_burn_ts ? timeAgo(m.last_burn_ts) : '—';
+
+  const cs = document.getElementById('currentSupply'); if (cs) cs.textContent = number(current) + ' tokens';
+  const ks = document.getElementById('kpiStart'); if (ks) ks.textContent = number(start) + ' tokens';
+  const kg = document.getElementById('kpiGoal'); if (kg) kg.textContent = number(goal) + ' tokens';
+
+  setText('kpiTotalBurned', number(totalBurned));
+  setText('kpiCurrentSupply', number(current));
+  setText('kpiPctGoal', pct.toFixed(2) + '%');
+  setText('kpiLastBurn', lastAgo);
+
+  setText('weeklyPot', m.weekly_prize_pot != null ? number(m.weekly_prize_pot) + ' $BURN-E' : '—');
+}
+
+function renderBurns(items, nextCursor) {
+  const body = document.getElementById('burnsBody');
+  const empty = document.getElementById('burnsEmpty');
+  const loadMore = document.getElementById('loadMoreBurns');
+  if (!body) return;
+
+  if (!body.dataset.init || !body.dataset.append) {
+    body.innerHTML = '';
+    body.dataset.init = '1';
+  }
+  if (!items || items.length === 0) {
+    empty.hidden = false;
+  } else {
+    empty.hidden = true;
+    appendBurnRows(items);
+  }
+
+  burnsCursor = nextCursor;
+  if (loadMore) loadMore.hidden = !nextCursor;
+}
+
+function appendBurnRows(items) {
+  const body = document.getElementById('burnsBody');
+  for (const it of items) {
+    const tr = document.createElement('tr');
+
+    const tdTime = document.createElement('td');
+    tdTime.textContent = shortTime(it.timestamp);
+    tr.appendChild(tdTime);
+
+    const tdAmt = document.createElement('td');
+    tdAmt.className = 'right amount';
+    tdAmt.innerHTML = `${number(it.amount)} <span class="unit">$BURN-E</span>`;
+    tr.appendChild(tdAmt);
+
+    const tdType = document.createElement('td');
+    const kind = (it.type || 'burn').replace('_',' ');
+    const span = document.createElement('span');
+    span.className = 'badge-pill';
+    span.textContent = titleCase(kind);
+    tdType.appendChild(span);
+    tr.appendChild(tdType);
+
+    const tdTx = document.createElement('td');
+    const a = document.createElement('a');
+    a.className = 'txhash';
+    a.href = it.explorer_url || '#';
+    a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = shortHash(it.tx_hash || '');
+    tdTx.appendChild(a);
+    tr.appendChild(tdTx);
+
+    body.appendChild(tr);
+  }
+  body.dataset.append = '1';
+}
+
+function renderMilestones(milestones) {
+  const wrap = document.getElementById('milestoneChips');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  const list = milestones && milestones.length ? milestones : [
+    { label: '900M', supply: 900000000, reached: false },
+    { label: '500M', supply: 500000000, reached: false },
+    { label: '100M', supply: 100000000, reached: false },
+    { label: '23M (Goal)', supply: 23000000, reached: false }
+  ];
+  list.forEach(m => {
+    const chip = document.createElement('span');
+    chip.className = 'milestone-chip' + (m.reached ? ' reached' : '');
+    chip.textContent = m.label;
+    wrap.appendChild(chip);
+  });
+}
+
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+function number(n) { try { return Number(n).toLocaleString(); } catch { return n; } }
+function shortHash(h) { if (!h) return '—'; return h.slice(0,4) + '…' + h.slice(-4); }
+function shortTime(ts) { if (!ts) return '—'; const d = new Date(ts); return d.toLocaleString(); }
+function titleCase(s){ return (s||'').replace(/\b\w/g, c => c.toUpperCase()); }
+function timeAgo(iso) {
+  const now = Date.now();
+  const t = new Date(iso).getTime();
+  const diff = Math.max(0, Math.floor((now - t) / 1000));
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  return `${Math.floor(diff/86400)}d ago`;
 }
 
 function setupModal() {
