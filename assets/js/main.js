@@ -57,14 +57,23 @@ async function loadConfigAndBurn() {
     const r = await fetch(CONFIG_URL, { cache: 'no-store' });
     const cfg = await r.json();
 
+    // Wire buttons from config
+    const dappUrl = cfg.launch_url;
+    const pumpUrl = cfg.pump_url;
     const launchBtn = document.getElementById('launchBtn');
     const launchBtn2 = document.getElementById('launchBtn2');
-    if (launchBtn) launchBtn.href = cfg.launch_url;
-    if (launchBtn2) launchBtn2.href = cfg.launch_url;
+    const buyBtn = document.getElementById('buyBtn');
+    const fuelBtn = document.getElementById('fuelBtn');
+    if (launchBtn && dappUrl) launchBtn.href = dappUrl;
+    if (launchBtn2 && dappUrl) launchBtn2.href = dappUrl;
+    if (buyBtn && pumpUrl) buyBtn.href = pumpUrl;
+    if (fuelBtn && pumpUrl) fuelBtn.href = pumpUrl;
 
+    // Subscribe form endpoint
     const form = document.getElementById('subscribeForm');
     if (form && cfg.subscribe_action) form.action = cfg.subscribe_action;
 
+    // Burn data
     let burnData = null;
     if (cfg.burn_api_url) {
       try {
