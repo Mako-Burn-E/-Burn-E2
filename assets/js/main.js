@@ -246,7 +246,39 @@ function setupModal() {
   const backdrop = document.getElementById('subscribeBackdrop');
   const btnClose = document.getElementById('subscribeClose');
   const form = document.getElementById('subscribeForm');
-  setTimeout(() => { if (backdrop) { backdrop.style.display = 'flex'; backdrop.setAttribute('aria-hidden','false'); } }, 30000);
-  if (btnClose) btnClose.addEventListener('click', () => { backdrop.style.display = 'none'; backdrop.setAttribute('aria-hidden','true'); });
-  if (form) form.addEventListener('submit', () => { setTimeout(() => { if (backdrop) backdrop.style.display = 'none'; }, 500); });
+
+  let shownOnce = false;
+  let secondChanceUsed = false;
+
+  function openModal() {
+    if (!backdrop) return;
+    backdrop.style.display = 'flex';
+    backdrop.setAttribute('aria-hidden', 'false');
+    shownOnce = true;
+  }
+
+  function closeModal() {
+    if (!backdrop) return;
+    backdrop.style.display = 'none';
+    backdrop.setAttribute('aria-hidden', 'true');
+
+    // Schedule one more re-show after 5 minutes, if not already used
+    if (shownOnce && !secondChanceUsed) {
+      secondChanceUsed = true;
+      setTimeout(() => {
+        if (backdrop.getAttribute('aria-hidden') === 'true') {
+          backdrop.style.display = 'flex';
+          backdrop.setAttribute('aria-hidden', 'false');
+        }
+      }, 300000); // 5 minutes = 300 000 ms
+    }
+  }
+
+  // First appearance after 30 seconds
+  setTimeout(openModal, 30000);
+
+  if (btnClose) btnClose.addEventListener('click', closeModal);
+  if (form) form.addEventListener('submit', () => {
+    setTimeout(closeModal, 500); // hide after form submit
+  });
 }
